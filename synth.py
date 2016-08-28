@@ -2,9 +2,9 @@ import os, math, random, struct, sys
 
 def expnote(n):
     """get a note freq relative to low A"""
-    return 440.0 * 2.0**n 
+    return 220.0 * 2.0**n 
 
-ns = [i / 13 for i in range(13)]
+ns = [i / 12 for i in range(13)]
 scale_nums = [0, 2, 4, 5, 7, 9, 11, 12]
 # AMaj
 scale = [expnote(ns[i]) for i in scale_nums]
@@ -26,6 +26,13 @@ class SongMan(object):
 
     def note(self, hz):
         return self.rate / (2 * math.pi * max(hz, 1) )
+
+    def filter(self, hz):
+        high_band = 600
+        if hz > high_band:
+            return max(high_band * 2 - hz, 0)
+        return hz
+
 
     def adsr(self, time, vol):
         vols = []
@@ -64,11 +71,10 @@ class SongMan(object):
             for harm in harms:
                 if self.wavetype == TRIANGLE:
                     harm = harm**2
-                note += 1.0 / harm * vol * math.sin(cycle / self.note(harm * hz))
-            if cycle < len(self.music):
-                self.music[cycle] = self.music[cycle] + note
-            else:
-                self.music.append(note)
+                note += 1.0 / harm * self.filter(hz) * vol * math.sin(cycle / self.note(harm * hz))
+            while cycle >= len(self.music):
+                self.music.append(0.0)
+            self.music[cycle] = self.music[cycle] + note
             cycle += 1
 
     def add_note(self, hz, vol, dur):
@@ -91,9 +97,9 @@ class SongMan(object):
         stream.close()
         p.terminate()
 
-sm = SongMan(SAMPLE_RATE, wavetype=SAWTOOTH)
-sm.play_note(scale[0], 0.3, 3.6, 0.5)
-sm.play_note(scale[2], 0.3, 3.3, 0.8)
-sm.play_note(scale[4], 0.3, 3.0, 1.1)
+sm = SongMan(SAMPLE_RATE, wavetype=TRIANGLE, decayt=0.1, attackt=0.1, releaset=0.2, susv=0.05)
+print(scale)
+for i in range(len(scale)):
+    sm.play_note(scale[i], 0.2, 0.8, 1.1 * i)
 sm.play()
 sm.write_file("test.wav")
