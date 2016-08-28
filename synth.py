@@ -92,7 +92,7 @@ class SongMan(object):
                         channels=1,
                         rate=SAMPLE_RATE,
                         output=True)
-        stream.write(struct.pack('%sf' % len(sm.music), *sm.music))
+        stream.write(struct.pack('%sf' % len(self.music), *self.music))
         stream.stop_stream()
         stream.close()
         p.terminate()
